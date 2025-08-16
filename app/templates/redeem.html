@@ -55,7 +55,12 @@ async function startCam(){
   try {
     detector = new BarcodeDetector({formats: ['qr_code']});
   } catch(e){ log('BarcodeDetector indisponible: '+e); return; }
-  mediaStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  } catch(e) {
+    log('Impossible d\'accéder à la caméra : ' + (e.message || e));
+    return;
+  }
   video.srcObject = mediaStream;
   await video.play();
   ticking = true;
