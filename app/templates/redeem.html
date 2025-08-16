@@ -36,7 +36,7 @@ async function redeem(opaque){
   if(!r.ok){ log('Erreur: '+(data.error||JSON.stringify(data))); return; }
   log('OK, ouverture du contenu '+data.content_id);
   const rr = await fetch('/content/'+data.content_id, {headers:{'Authorization':'Bearer '+data.token}});
-  document.body.innerHTML = await rr.text();
+  document.body.innerHTML = DOMPurify.sanitize(await rr.text());
 }
 
 // Si l'URL contient déjà ?c=..., tenter directement
