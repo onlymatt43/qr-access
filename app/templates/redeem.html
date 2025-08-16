@@ -28,7 +28,7 @@
 <script>
 const opaqueFromUrl = document.getElementById('opaque').value;
 const deviceId = document.getElementById('device_id').value;
-const log = (m)=>document.getElementById('log').textContent += m+'\n';
+const log = (m)=>document.getElementById('log').textContent += m+'\\n';
 
 async function redeem(opaque){
   const r = await fetch('/api/redeem', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({opaque, device_id: deviceId})});
