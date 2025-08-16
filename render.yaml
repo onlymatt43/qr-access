@@ -1,0 +1,18 @@
+services:
+- type: web
+  name: qr-access-flask
+  env: python
+  plan: starter
+  buildCommand: pip install -r requirements.txt
+  startCommand: gunicorn 'app:create_app()'
+  envVars:
+  - key: DATABASE_URL
+    value: sqlite:///local.db
+  - key: REDIS_URL
+    value: redis://localhost:6379/0
+  - key: JWT_PRIVATE_KEY
+    sync: false
+  - key: MERCHANT_SALT
+    value: dev-secret
+  - key: BASE_URL
+    value: http://localhost:5000
