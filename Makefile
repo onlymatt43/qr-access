@@ -19,6 +19,10 @@ qr-install:
 	python3 -m pip install "qrcode[pil]"
 
 qr:
+	@if [ -z "$(QR_URL)" ]; then \
+		echo "Error: QR_URL is not set. Usage: make qr QR_URL=\"https://.../redeem?c=XXXX\""; \
+		exit 1; \
+	fi; \
 	python3 scripts/make_qr.py "$(QR_URL)"
 
 # --- Vérifications ---
