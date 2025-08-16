@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block body %}
+<main style="max-width:720px;margin:2rem auto;padding:1rem;">
+  <h1 style="margin-bottom:0.5rem;">Validation QR</h1>
+  <p style="margin:0 0 1rem 0;">Scannez le QR avec la caméra de votre téléphone pour valider l'accès.</p>
+
+  <input type="hidden" id="opaque" value="{{ opaque }}" />
+  <input type="hidden" id="device_id" value="{{ device_id }}" />
+
+  <div id="camera-ui" style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+    <div>
+      <video id="video" autoplay playsinline style="width:320px;height:240px;border-radius:8px;border:1px solid #ddd;background:#000"></video>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem;">
+        <button id="btn-start" style="padding:0.5rem 0.75rem;">Scanner QR</button>
+        <button id="btn-stop" style="padding:0.5rem 0.75rem;">Arrêter</button>
+        <label style="padding:0.5rem 0.75rem;border:1px solid #222;border-radius:8px;cursor:pointer;">
+          Importer une image QR
+          <input id="file" type="file" accept="image/*" capture="environment" style="display:none" />
+        </label>
+      </div>
+    </div>
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  </div>
+
+  <pre id="log" style="white-space:pre-wrap;background:#f7f7f7;padding:0.75rem;border-radius:8px;margin-top:1rem;min-height:3rem"></pre>
+</main>
+
+<script>
+const opaqueFromUrl = document.getElementById('opaque').value;
+const deviceId = document.getElementById('device_id').value;
+const log = (m)=>document.getElementById('log').textContent += m+'\n';
+
+async function redeem(opaque){
+  const r = await fetch('/api/redeem', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({opaque, device_id: deviceId})});
+  const data = await r.json();
+  if(!r.ok){ log('Erreur: '+(data.error||JSON.stringify(data))); return; }
+  log('OK, ouverture du contenu '+data.content_id);
+  const rr = await fetch('/content/'+data.content_id, {headers:{'Authorization':'Bearer '+data.token}});
+  document.body.innerHTML = await rr.text();
+}
+
+// Si l'URL contient déjà ?c=..., tenter directement
+if (opaqueFromUrl) redeem(opaqueFromUrl);
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let mediaStream = null, ticking = false, detector = null;
+
+async function startCam(){
+  if(!('BarcodeDetector' in window)){
+    log("BarcodeDetector non supporté, utilisez 'Importer une image QR'.");
+    return;
+  }
+  try {
+    detector = new BarcodeDetector({formats: ['qr_code']});
+  } catch(e){ log('BarcodeDetector indisponible: '+e); return; }
+  mediaStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  video.srcObject = mediaStream;
+  await video.play();
+  ticking = true;
+  scanLoop();
+}
+
+function stopCam(){
+  ticking = false;
+  if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
+}
+
+async function scanLoop(){
+  if(!ticking) return;
+  try{
+    const barcodes = await detector.detect(video);
+    if(barcodes && barcodes.length){
+      const raw = (barcodes[0].rawValue||'').trim();
+      log('QR détecté');
+      stopCam();
+      // Si le QR est une URL avec ?c=..., extraire c ; sinon, prendre le texte brut
+      let opaque = null;
+      try {
+        const u = new URL(raw);
+        opaque = u.searchParams.get('c');
+      } catch { opaque = raw; }
+      if(opaque){ return redeem(opaque); }
+      log('Format QR non reconnu');
+    }
+  }catch(e){ /* ignore */ }
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  requestAnimationFrame(scanLoop);
+}
+
+document.getElementById('btn-start').onclick = startCam;
+document.getElementById('btn-stop').onclick = stopCam;
+
+document.getElementById('file').addEventListener('change', async (e)=>{
+  log('Image sélectionnée. (Décodage QR côté client/serveur à implémenter si nécessaire)');
+});
+</script>
+{% endblock %}
