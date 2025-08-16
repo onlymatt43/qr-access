@@ -28,7 +28,7 @@
 <script>
 const opaqueFromUrl = document.getElementById('opaque').value;
 const deviceId = document.getElementById('device_id').value;
-const log = (m)=>document.getElementById('log').textContent += m+'\n';
+const log = (m)=>document.getElementById('log').textContent += m+'\\n';
 
 async function redeem(opaque){
   const r = await fetch('/api/redeem', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({opaque, device_id: deviceId})});
@@ -36,7 +36,7 @@ async function redeem(opaque){
   if(!r.ok){ log('Erreur: '+(data.error||JSON.stringify(data))); return; }
   log('OK, ouverture du contenu '+data.content_id);
   const rr = await fetch('/content/'+data.content_id, {headers:{'Authorization':'Bearer '+data.token}});
-  document.body.innerHTML = await rr.text();
+  document.body.innerHTML = DOMPurify.sanitize(await rr.text());
 }
 
 // Si l'URL contient déjà ?c=..., tenter directement
@@ -55,7 +55,12 @@ async function startCam(){
   try {
     detector = new BarcodeDetector({formats: ['qr_code']});
   } catch(e){ log('BarcodeDetector indisponible: '+e); return; }
-  mediaStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+  } catch(e) {
+    log('Impossible d\'accéder à la caméra : ' + (e.message || e));
+    return;
+  }
   video.srcObject = mediaStream;
   await video.play();
   ticking = true;
@@ -93,7 +98,43 @@ document.getElementById('btn-start').onclick = startCam;
 document.getElementById('btn-stop').onclick = stopCam;
 
 document.getElementById('file').addEventListener('change', async (e)=>{
-  log('Image sélectionnée. (Décodage QR côté client/serveur à implémenter si nécessaire)');
+  const file = e.target.files[0];
+  if (!file) { log('Aucune image sélectionnée.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      // Draw image to canvas
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      // Use jsQR to detect QR code
+      const qr = jsQR(imageData.data, imageData.width, imageData.height);
+      if (qr && qr.data) {
+        log('QR détecté dans l\'image.');
+        // Same logic as scanLoop for extracting opaque
+        let opaque = null;
+        try {
+          const u = new URL(qr.data.trim());
+          opaque = u.searchParams.get('c');
+        } catch { opaque = qr.data.trim(); }
+        if(opaque){ return redeem(opaque); }
+        log('Format QR non reconnu');
+      } else {
+        log('Aucun QR code détecté dans l\'image.');
+      }
+    };
+    img.onerror = function() {
+      log('Impossible de charger l\'image.');
+    };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function() {
+    log('Erreur lors de la lecture du fichier image.');
+  };
+  reader.readAsDataURL(file);
 });
 </script>
 {% endblock %}
