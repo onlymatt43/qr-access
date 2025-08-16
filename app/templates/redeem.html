@@ -98,7 +98,43 @@ document.getElementById('btn-start').onclick = startCam;
 document.getElementById('btn-stop').onclick = stopCam;
 
 document.getElementById('file').addEventListener('change', async (e)=>{
-  log('Image sélectionnée. (Décodage QR côté client/serveur à implémenter si nécessaire)');
+  const file = e.target.files[0];
+  if (!file) { log('Aucune image sélectionnée.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image();
+    img.onload = function() {
+      // Draw image to canvas
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, img.width, img.height);
+      // Use jsQR to detect QR code
+      const qr = jsQR(imageData.data, imageData.width, imageData.height);
+      if (qr && qr.data) {
+        log('QR détecté dans l\'image.');
+        // Same logic as scanLoop for extracting opaque
+        let opaque = null;
+        try {
+          const u = new URL(qr.data.trim());
+          opaque = u.searchParams.get('c');
+        } catch { opaque = qr.data.trim(); }
+        if(opaque){ return redeem(opaque); }
+        log('Format QR non reconnu');
+      } else {
+        log('Aucun QR code détecté dans l\'image.');
+      }
+    };
+    img.onerror = function() {
+      log('Impossible de charger l\'image.');
+    };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function() {
+    log('Erreur lors de la lecture du fichier image.');
+  };
+  reader.readAsDataURL(file);
 });
 </script>
 {% endblock %}
