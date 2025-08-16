@@ -1,0 +1,10 @@
+# CODEOWNERS for qr-access
+# Use GitHub usernames or org/team slugs (e.g. @my-org/my-team). For a personal repo,
+# team slugs won't work—use your username(s) instead.
+
+# Default owner for everything
+*       @onlymatt43
+
+# Scoped ownerships (adjust if you add collaborators or move to an org)
+.github/ @onlymatt43
+infra/   @onlymatt43
