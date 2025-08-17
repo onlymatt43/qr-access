@@ -5,6 +5,7 @@ PyJWT>=2.8
 psycopg2-binary
 SQLAlchemy>=2.0
 Flask-SQLAlchemy>=3.1,<4.0
+Flask-Migrate>=4.0,<5.0
 alembic
 redis>=5.0
 qrcode[pil]

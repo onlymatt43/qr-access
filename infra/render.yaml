@@ -1,0 +1,27 @@
+services:
+- type: web
+  name: qr-access-${BRANCH:-staging}
+  env: python
+  plan: starter
+  buildCommand: pip install -r requirements.txt
+  startCommand: gunicorn -c gunicorn.conf.py 'app:create_app()'
+  envVars:
+  - key: DATABASE_URL
+    fromDatabase: { name: qr-access-db-${BRANCH:-staging}, property: connectionString }
+  - key: REDIS_URL
+    fromService: { name: qr-access-redis-${BRANCH:-staging}, type: redis }
+  - key: JWT_PRIVATE_KEY
+    sync: false
+  - key: JWT_PUBLIC_KEY
+    sync: false
+  - key: MERCHANT_SALT
+    sync: false
+  - key: BASE_URL
+    value: https://qr-access-${BRANCH:-staging}.onrender.com
+
+databases:
+- name: qr-access-db-${BRANCH:-staging}
+
+redis:
+- name: qr-access-redis-${BRANCH:-staging}
+  plan: starter
