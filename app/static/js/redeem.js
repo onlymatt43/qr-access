@@ -107,6 +107,46 @@
 
   const fileInput = document.getElementById('file');
   if (fileInput) fileInput.addEventListener('change', async (e)=>{
-    log('Décodage d\'image non disponible sans lib externe (jsQR).');
+    const file = e.target.files && e.target.files[0];
+    if (!file) { log('Aucune image sélectionnée.'); return; }
+    if (!canvas || !ctx) { log('Canvas indisponible.'); return; }
+
+    const img = new Image();
+    img.onload = async function() {
+      try {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+
+        if (!('BarcodeDetector' in window)) {
+          log("BarcodeDetector non supporté pour l'image importée.");
+          return;
+        }
+        if (!detector) {
+          try { detector = new BarcodeDetector({ formats: ['qr_code'] }); }
+          catch (e) { log('BarcodeDetector indisponible: ' + e); return; }
+        }
+        const barcodes = await detector.detect(canvas);
+        if (barcodes && barcodes.length) {
+          log("QR détecté dans l'image.");
+          let raw = (barcodes[0].rawValue || '').trim();
+          let opaque = null;
+          try {
+            const u = new URL(raw);
+            opaque = u.searchParams.get('c');
+          } catch { opaque = raw; }
+          if (opaque) { return redeem(opaque); }
+          log('Format QR non reconnu');
+        } else {
+          log('Aucun QR code détecté dans l\'image.');
+        }
+      } catch (err) {
+        log('Erreur lors du décodage: ' + (err?.message || err));
+      }
+    };
+    img.onerror = function(){ log('Impossible de charger l\'image.'); };
+    // Utiliser un Object URL pour charger rapidement l'image sélectionnée
+    const url = URL.createObjectURL(file);
+    img.src = url;
   });
 })();
