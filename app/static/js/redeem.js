@@ -38,7 +38,7 @@
       log('OK, ouverture du contenu ' + data.content_id);
 
       // Récupère le HTML avec le token et affiche-le dans un iframe sandboxé
-      const rr = await fetch('/content/' + data.content_id, {
+  const rr = await fetch('/api/content/' + data.content_id, {
         headers: { 'Authorization': 'Bearer ' + data.token }
       });
       const html = await rr.text();
