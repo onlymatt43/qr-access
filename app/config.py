@@ -13,16 +13,33 @@ class Config:
     HLS_SEGMENT_DURATION = int(os.environ.get('HLS_SEGMENT_DURATION', '6'))
 
     def __init__(self):
-        # Fallback: load keys from local files if env vars absent
+        # Optional fallbacks to support Secret Files on Render (/etc/secrets)
         if not self.JWT_PRIVATE_KEY:
+            for p in ('/etc/secrets/jwt.key', 'jwt.key'):
+                try:
+                    with open(p, 'r') as f:
+                        self.JWT_PRIVATE_KEY = f.read().strip()
+                        break
+                except Exception:
+                    continue
+        if not self.JWT_PUBLIC_KEY:
+            for p in ('/etc/secrets/jwt.pub', 'jwt.pub'):
+                try:
+                    with open(p, 'r') as f:
+                        self.JWT_PUBLIC_KEY = f.read().strip()
+                        break
+                except Exception:
+                    continue
+        # Optional fallbacks for other secrets
+        if (not self.SECRET_KEY) or self.SECRET_KEY == 'dev':
             try:
-                with open('jwt.key', 'r') as f:
-                    self.JWT_PRIVATE_KEY = f.read()
+                with open('/etc/secrets/secret_key', 'r') as f:
+                    self.SECRET_KEY = f.read().strip()
             except Exception:
                 pass
-        if not self.JWT_PUBLIC_KEY:
+        if (not self.MERCHANT_SALT) or self.MERCHANT_SALT == 'salt':
             try:
-                with open('jwt.pub', 'r') as f:
-                    self.JWT_PUBLIC_KEY = f.read()
+                with open('/etc/secrets/merchant_salt', 'r') as f:
+                    self.MERCHANT_SALT = f.read().strip()
             except Exception:
                 pass
