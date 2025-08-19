@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Environment / secrets
+.env
+*.key
+jwt.key
+jwt.pub
+
+# OS/IDE
+.DS_Store
+.vscode/
+.idea/

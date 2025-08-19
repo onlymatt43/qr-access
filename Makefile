@@ -1,4 +1,4 @@
-.PHONY: dev seed lint ci qr qr-install check-code check-jwt check-redis test
+.PHONY: dev seed lint ci qr qr-install check-code check-jwt check-redis test db-init db-migrate db-upgrade
 
 # --- Développement local ---
 dev:
@@ -38,3 +38,13 @@ check-redis:
 # --- Tests unitaires ---
 test:
 	pytest -q --disable-warnings
+
+# Database migrations (Flask-Migrate)
+db-init:
+	flask --app app:create_app db init
+
+db-migrate:
+	flask --app app:create_app db migrate -m "auto"
+
+db-upgrade:
+	flask --app app:create_app db upgrade

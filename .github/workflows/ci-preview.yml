@@ -1,0 +1,46 @@
+name: CI & Render Previews
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall .
+
+  render-preview:
+    if: github.event_name == 'pull_request'
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create/Update Render Preview
+        uses: render-oss/action@v1
+        with:
+          serviceId: ${{ secrets.RENDER_SERVICE_ID }}
+          apiKey: ${{ secrets.RENDER_API_KEY }}
+          branch: ${{ github.head_ref }}
+          pr: ${{ github.event.number }}
+          envVars: |
+            BRANCH=${{ github.head_ref }}
+            IS_PREVIEW=true
+
+  render-staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Render Staging
+        uses: render-oss/action@v1
+        with:
+          serviceId: ${{ secrets.RENDER_SERVICE_ID_STAGING }}
+          apiKey: ${{ secrets.RENDER_API_KEY }}
+          branch: main
