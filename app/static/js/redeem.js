@@ -119,7 +119,8 @@
         ctx.drawImage(img, 0, 0, img.width, img.height);
 
         if (!('BarcodeDetector' in window)) {
-          log("BarcodeDetector non supporté pour l'image importée.");
+          // Fallback serveur
+          await uploadToServer(file);
           return;
         }
         if (!detector) {
@@ -127,7 +128,7 @@
           catch (e) { log('BarcodeDetector indisponible: ' + e); return; }
         }
         const barcodes = await detector.detect(canvas);
-        if (barcodes && barcodes.length) {
+  if (barcodes && barcodes.length) {
           log("QR détecté dans l'image.");
           let raw = (barcodes[0].rawValue || '').trim();
           let opaque = null;
@@ -138,15 +139,38 @@
           if (opaque) { return redeem(opaque); }
           log('Format QR non reconnu');
         } else {
-          log('Aucun QR code détecté dans l\'image.');
+          // Fallback serveur si détection locale échoue
+          await uploadToServer(file);
         }
       } catch (err) {
         log('Erreur lors du décodage: ' + (err?.message || err));
       }
     };
-    img.onerror = function(){ log('Impossible de charger l\'image.'); };
+  img.onerror = function(){ log('Impossible de charger l\'image.'); };
     // Utiliser un Object URL pour charger rapidement l'image sélectionnée
     const url = URL.createObjectURL(file);
     img.src = url;
   });
+
+  async function uploadToServer(file) {
+    try {
+      const fd = new FormData();
+      fd.append('image', file, file.name || 'qr.png');
+      const r = await fetch('/api/decode', { method: 'POST', body: fd });
+      const data = await r.json();
+      if (!r.ok) { log('Decode serveur: ' + (data.error || r.status)); return; }
+      if (data && data.ok && data.raw) {
+        let raw = String(data.raw).trim();
+        let opaque = null;
+        try { const u = new URL(raw); opaque = u.searchParams.get('c'); }
+        catch { opaque = raw; }
+        if (opaque) return redeem(opaque);
+        log('Format QR non reconnu (serveur).');
+      } else {
+        log('Aucun QR détecté (serveur).');
+      }
+    } catch (e) {
+      log('Erreur decode serveur: ' + (e.message || e));
+    }
+  }
 })();

@@ -30,3 +30,27 @@ def content(content_id: int):
         return jsonify({'error': 'wrong_content'}), 403
 
     return Response(f"<html><body>Protected content {content_id}</body></html>", mimetype='text/html', headers={'Cache-Control':'no-store'})
+
+@bp.post('/decode')
+def decode_qr():
+    # Accept multipart/form-data with file field 'image'
+    if 'image' not in request.files:
+        return jsonify({'error': 'missing_file'}), 400
+    file = request.files['image']
+    data = file.read()
+    if not data:
+        return jsonify({'error': 'empty_file'}), 400
+    try:
+        import numpy as np
+        import cv2
+        arr = np.frombuffer(data, dtype=np.uint8)
+        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({'error': 'bad_image'}), 400
+        detector = cv2.QRCodeDetector()
+        val, points, _ = detector.detectAndDecode(img)
+        if not val:
+            return jsonify({'ok': False})
+        return jsonify({'ok': True, 'raw': val})
+    except Exception as e:
+        return jsonify({'error': 'decode_failed', 'detail': str(e)}), 500
