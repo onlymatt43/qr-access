@@ -1,9 +1,1 @@
-Database migrations are managed by Flask-Migrate (Alembic).
-
-Typical usage:
-- Initialize (once):
-  flask --app app:create_app db init
-- Generate migration:
-  flask --app app:create_app db migrate -m "message"
-- Apply migration:
-  flask --app app:create_app db upgrade
+Single-database configuration for Flask.
