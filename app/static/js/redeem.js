@@ -4,6 +4,26 @@
   const logEl = document.getElementById('log');
   const log = (m) => { if (logEl) logEl.textContent += m + '\n'; };
 
+  // Extract opaque token from a raw QR payload.
+  // Accepts absolute URLs, relative URLs (e.g. /redeem?c=...), or direct opaque strings.
+  function extractOpaque(raw) {
+    if (!raw) return '';
+    const s = String(raw).trim();
+    // Try URL with base (handles absolute and relative forms)
+    try {
+      let u;
+      try { u = new URL(s); }
+      catch { u = new URL(s, window.location.origin); }
+      const c = u.searchParams.get('c');
+      if (c) return c;
+    } catch { /* not a URL */ }
+    // Try regex extraction of ?c=
+    const m = s.match(/[?&]c=([^&]+)/);
+    if (m && m[1]) return decodeURIComponent(m[1]);
+    // Fallback: treat the string as the opaque token itself
+    return s;
+  }
+
   async function redeem(opaque){
     try {
       const r = await fetch('/api/redeem', {
@@ -11,7 +31,9 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ opaque, device_id: deviceId })
       });
-      const data = await r.json();
+      let data;
+      try { data = await r.json(); }
+      catch { data = { error: 'bad_response', status: r.status }; }
       if(!r.ok){ log('Erreur: ' + (data.error || JSON.stringify(data))); return; }
       log('OK, ouverture du contenu ' + data.content_id);
 
@@ -37,7 +59,8 @@
         doc.close();
       }
     } catch (e) {
-      log('Erreur réseau: ' + (e.message || e));
+      const msg = (e && e.message) ? e.message : String(e);
+      log('Erreur réseau: ' + msg);
     }
   }
 
@@ -84,12 +107,8 @@
         const raw = (barcodes[0].rawValue||'').trim();
         log('QR détecté');
         stopCam();
-        // Si le QR est une URL avec ?c=..., extraire c ; sinon, prendre le texte brut
-        let opaque = null;
-        try {
-          const u = new URL(raw);
-          opaque = u.searchParams.get('c');
-        } catch { opaque = raw; }
+  // Si le QR contient ?c=..., extraire; sinon, prendre le texte brut
+  const opaque = extractOpaque(raw);
         if(opaque){ return redeem(opaque); }
         log('Format QR non reconnu');
       }
@@ -128,14 +147,10 @@
           catch (e) { log('BarcodeDetector indisponible: ' + e); return; }
         }
         const barcodes = await detector.detect(canvas);
-  if (barcodes && barcodes.length) {
+        if (barcodes && barcodes.length) {
           log("QR détecté dans l'image.");
           let raw = (barcodes[0].rawValue || '').trim();
-          let opaque = null;
-          try {
-            const u = new URL(raw);
-            opaque = u.searchParams.get('c');
-          } catch { opaque = raw; }
+          const opaque = extractOpaque(raw);
           if (opaque) { return redeem(opaque); }
           log('Format QR non reconnu');
         } else {
@@ -160,10 +175,8 @@
       const data = await r.json();
       if (!r.ok) { log('Decode serveur: ' + (data.error || r.status)); return; }
       if (data && data.ok && data.raw) {
-        let raw = String(data.raw).trim();
-        let opaque = null;
-        try { const u = new URL(raw); opaque = u.searchParams.get('c'); }
-        catch { opaque = raw; }
+  let raw = String(data.raw).trim();
+  const opaque = extractOpaque(raw);
         if (opaque) return redeem(opaque);
         log('Format QR non reconnu (serveur).');
       } else {
