@@ -14,3 +14,7 @@ jwt.pub
 .DS_Store
 .vscode/
 .idea/
+
+# Generated artifacts / nested repos
+qr.png
+qr-access/

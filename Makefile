@@ -1,3 +1,24 @@
+issue-qr:
+	@echo "Issuing QR via admin API…"
+	@python3 scripts/issue_qr.py
+
+issue-qr-png:
+	@echo "Issuing QR and downloading PNG…"
+	@WANT_PNG=1 python3 scripts/issue_qr.py
+
+test-webhook:
+	@echo "Sending sample payment webhook…"
+	@python3 - <<'PY'
+	import os, json, requests
+	BASE=os.environ.get('BASE_URL','http://localhost:5000')
+	KEY=os.environ.get('WEBHOOK_KEY','dev')
+	body={
+	  'event':'payment.succeeded',
+	  'data':{'merchant_id':1,'product_id':1,'duration_min':15}
+	}
+	r=requests.post(f"{BASE}/admin/payment-webhook", headers={'X-Webhook-Key':KEY,'Content-Type':'application/json'}, data=json.dumps(body))
+	print(r.status_code, r.text)
+	PY
 .PHONY: dev seed lint ci qr qr-install check-code check-jwt check-redis test db-init db-migrate db-upgrade
 
 # --- Développement local ---

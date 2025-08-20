@@ -13,7 +13,17 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: python -m pip install -r requirements.txt
-      - run: python -m compileall .
+      - name: Compile Python (app/scripts/workers only)
+        run: |
+          python - <<'PY'
+          import compileall, sys, os
+          ok = True
+          for d in ('app','scripts','workers'):
+              if os.path.isdir(d):
+                  if not compileall.compile_dir(d, quiet=1, force=True):
+                      ok = False
+          sys.exit(0 if ok else 1)
+          PY
 
   render-preview:
     if: github.event_name == 'pull_request'
