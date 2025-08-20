@@ -1,3 +1,10 @@
+issue-qr:
+	@echo "Issuing QR via admin API…"
+	@python3 scripts/issue_qr.py
+
+issue-qr-png:
+	@echo "Issuing QR and downloading PNG…"
+	@WANT_PNG=1 python3 scripts/issue_qr.py
 .PHONY: dev seed lint ci qr qr-install check-code check-jwt check-redis test db-init db-migrate db-upgrade
 
 # --- Développement local ---
