@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify, request, current_app, send_file
 from datetime import datetime
-import io, time, hashlib, base64
+import io
+import time
+import hashlib
+import base64
 from .models import db, Code
 from .services.tokens import make_opaque
 from .services.qr import make_qr_bytes
