@@ -1,4 +1,7 @@
-import os, sys, json, base64
+import os
+import sys
+import json
+import base64
 import requests
 
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
