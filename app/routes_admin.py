@@ -28,7 +28,8 @@ def issue_qr():
 
     # Create a lightweight code record
     now = datetime.utcnow()
-    code_hash = hashlib.sha256(f"{merchant_id}.{product_id}.{now.timestamp()}".encode()).hexdigest()
+    random_value = secrets.token_hex(16)
+    code_hash = hashlib.sha256(f"{merchant_id}.{product_id}.{random_value}".encode()).hexdigest()
     code = Code(
         merchant_id=merchant_id,
         product_id=product_id,
