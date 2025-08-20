@@ -44,7 +44,7 @@ def issue_qr():
     png = make_qr_bytes(redeem_url)
 
     # Return multipart-like JSON + optional binary when asked
-    accept = request.headers.get('Accept','')
+    accept = request.headers.get('Accept', '')
     if 'image/png' in accept:
         return send_file(
             io.BytesIO(png), mimetype='image/png', as_attachment=False, download_name=f"qr_{code.id}.png",
