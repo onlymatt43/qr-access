@@ -12,6 +12,7 @@ class Config:
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
     HLS_SEGMENT_DURATION = int(os.environ.get('HLS_SEGMENT_DURATION', '6'))
     ADMIN_API_KEY = os.environ.get('ADMIN_API_KEY')
+    WEBHOOK_KEY = os.environ.get('WEBHOOK_KEY')
 
     def __init__(self):
         # Optional fallbacks to support Secret Files on Render (/etc/secrets)
