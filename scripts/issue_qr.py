@@ -25,7 +25,7 @@ headers = {'X-Admin-Key': ADMIN_API_KEY}
 
 # If WANT_PNG=1, request image directly
 if os.environ.get('WANT_PNG', '0') == '1':
-    r = requests.post(f"{BASE_URL}/admin/issue-qr", headers={**headers, 'Accept':'image/png'}, json=payload)
+    r = requests.post(f"{BASE_URL}/admin/issue-qr", headers={**headers, 'Accept': 'image/png'}, json=payload)
     if r.status_code != 200:
         print('Error:', r.status_code, r.text)
         sys.exit(1)
