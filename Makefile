@@ -6,6 +6,11 @@ issue-qr-png:
 	@echo "Issuing QR and downloading PNG…"
 	@WANT_PNG=1 python3 scripts/issue_qr.py
 
+# --- Batch vouchers (Option B) ---
+vouchers:
+	@echo "Generating batch vouchers…"
+	@python3 scripts/batch_vouchers.py --count $${COUNT:-10} --batch $${BATCH_ID:-batch} --out $${OUT:-out}
+
 test-webhook:
 	@echo "Sending sample payment webhook…"
 	@python3 - <<'PY'
