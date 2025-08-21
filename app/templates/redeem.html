@@ -7,6 +7,12 @@
   <input type="hidden" id="opaque" value="{{ opaque }}" />
   <input type="hidden" id="device_id" value="{{ device_id }}" />
 
+  <!-- Start gate: if the URL already contains a code (?c=...), let user tap to begin -->
+  <div id="start-gate" style="display:none;margin:1rem 0;padding:1rem;border:1px solid #ddd;border-radius:8px;background:#fafafa;">
+    <p style="margin:0 0 0.75rem 0;">Votre accès démarrera quand vous appuierez sur le bouton ci-dessous.</p>
+    <button id="btn-start-access" style="padding:0.75rem 1rem;font-size:1rem;">Commencer l'accès</button>
+  </div>
+
   <div id="camera-ui" style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
     <div>
       <video id="video" autoplay playsinline style="width:320px;height:240px;border-radius:8px;border:1px solid #ddd;background:#000"></video>
@@ -24,5 +30,5 @@
 
   <pre id="log" style="white-space:pre-wrap;background:#f7f7f7;padding:0.75rem;border-radius:8px;margin-top:1rem;min-height:3rem"></pre>
 </main>
-<script src="{{ url_for('static', filename='js/redeem.js') }}?v=20250819-3"></script>
+<script src="{{ url_for('static', filename='js/redeem.js') }}?v=20250821-1"></script>
 {% endblock %}

@@ -3,6 +3,9 @@
   const deviceId = document.getElementById('device_id')?.value || '';
   const logEl = document.getElementById('log');
   const log = (m) => { if (logEl) logEl.textContent += m + '\n'; };
+  const startGate = document.getElementById('start-gate');
+  const startAccessBtn = document.getElementById('btn-start-access');
+  const params = new URLSearchParams(window.location.search);
 
   // Extract opaque token from a raw QR payload.
   // Accepts absolute URLs, relative URLs (e.g. /redeem?c=...), or direct opaque strings.
@@ -64,8 +67,16 @@
     }
   }
 
-  // Si l'URL contient déjà ?c=..., tenter directement
-  if (opaqueFromUrl) redeem(opaqueFromUrl);
+  // Si l'URL contient déjà ?c=..., ne démarre que si auto=1; sinon, montre un bouton
+  if (opaqueFromUrl) {
+    const auto = params.get('auto');
+    if (auto === '1') {
+      redeem(opaqueFromUrl);
+    } else if (startGate && startAccessBtn) {
+      startGate.style.display = 'block';
+      startAccessBtn.onclick = () => redeem(opaqueFromUrl);
+    }
+  }
 
   const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
