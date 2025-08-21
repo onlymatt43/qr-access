@@ -1,4 +1,4 @@
-name: CI & Render Previews
+curl -s https://<your-app>/healthname: CI & Render Previews
 on:
   pull_request:
     branches: [ main ]

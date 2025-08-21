@@ -31,7 +31,10 @@ def issue_qr():
     now = datetime.utcnow()
     random_value = secrets.token_hex(16)
     code_hash = hashlib.sha256(f"{merchant_id}.{product_id}.{random_value}".encode()).hexdigest()
+    # Explicit PK to support SQLite (BIGINT PK doesn't autoincrement by default)
+    code_id = (int(time.time() * 1000) << 16) | (int.from_bytes(secrets.token_bytes(2), 'big'))
     code = Code(
+        id=code_id,
         merchant_id=merchant_id,
         product_id=product_id,
         code_hash=code_hash,
@@ -79,7 +82,9 @@ def payment_webhook():
     # Reuse issuance logic
     random_value = secrets.token_hex(16)
     code_hash = hashlib.sha256(f"{merchant_id}.{product_id}.{random_value}".encode()).hexdigest()
+    code_id = (int(time.time() * 1000) << 16) | (int.from_bytes(secrets.token_bytes(2), 'big'))
     code = Code(
+        id=code_id,
         merchant_id=merchant_id,
         product_id=product_id,
         code_hash=code_hash,
